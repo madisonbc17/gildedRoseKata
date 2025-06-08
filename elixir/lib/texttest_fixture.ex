@@ -30,7 +30,7 @@ defmodule GildedRose.TextTestFixture do
       IO.puts "name, sellIn, quality"
       Enum.each(items, fn item -> IO.inspect(item) end)
       IO.puts("")
-      GildedRose.update_quality(items)
+      GildedRose.update_items(items)
     end)
   end
 end

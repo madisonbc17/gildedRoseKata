@@ -1,83 +1,61 @@
 defmodule GildedRose do
-  # Example
-  # update_quality([%Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: 9, quality: 1}])
-  # => [%Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: 8, quality: 3}]
+  @moduledoc """
+  The Gilded Rose kata is a classic coding exercise that involves updating the quality of items in a shop based on specific rules.
+  This module provides functions to update the quality of items according to the rules defined in the kata.
+  """
 
-  def update_quality(items) do
+  @spec update_items([%Item{}]) :: list()
+  def update_items(items) when is_list(items) do
     Enum.map(items, &update_item/1)
   end
 
+  @spec update_item(%Item{}) :: %Item{}
   def update_item(item) do
-    item = cond do
-      item.name != "Aged Brie" && item.name != "Backstage passes to a TAFKAL80ETC concert" ->
-        if item.quality > 0 do
-          if item.name != "Sulfuras, Hand of Ragnaros" do
-            %{item | quality: item.quality - 1}
-          else
-            item
-          end
-        else
-          item
-        end
-      true ->
-        cond do
-          item.quality < 50 ->
-            item = %{item | quality: item.quality + 1}
-            cond do
-              item.name == "Backstage passes to a TAFKAL80ETC concert" ->
-                item = cond do
-                  item.sell_in < 11 ->
-                    cond do
-                      item.quality < 50 ->
-                        %{item | quality: item.quality + 1}
-                      true -> item
-                    end
-                  true -> item
-                end
-                cond do
-                  item.sell_in < 6 ->
-                    cond do
-                      item.quality < 50 ->
-                        %{item | quality: item.quality + 1}
-                      true -> item
-                    end
-                  true -> item
-                end
-              true -> item
-            end
-          true -> item
-        end
-    end
-    item = cond do
-      item.name != "Sulfuras, Hand of Ragnaros" ->
-        %{item | sell_in: item.sell_in - 1}
-      true -> item
-    end
+    type = item_type(item.name)
+
+    %Item{
+      item
+      | sell_in: update_sell_in(type, item.sell_in),
+        quality: update_quality(type, item)
+    }
+  end
+
+  defp item_type(name) do
     cond do
-      item.sell_in < 0 ->
-        cond do
-          item.name != "Aged Brie" ->
-            cond do
-              item.name != "Backstage passes to a TAFKAL80ETC concert" ->
-                cond do
-                  item.quality > 0 ->
-                    cond do
-                      item.name != "Sulfuras, Hand of Ragnaros" ->
-                        %{item | quality: item.quality - 1}
-                      true -> item
-                    end
-                  true -> item
-                end
-              true -> %{item | quality: item.quality - item.quality}
-            end
-          true ->
-            cond do
-              item.quality < 50 ->
-                %{item | quality: item.quality + 1}
-              true -> item
-            end
-        end
-      true -> item
+      String.contains?(name, "Aged Brie") -> :aged_brie
+      String.contains?(name, "Sulfuras") -> :sulfuras
+      String.contains?(name, "Backstage passes") -> :backstage
+      String.contains?(name, "Conjured") -> :conjured
+      true -> :normal
     end
+  end
+
+  defp update_sell_in(:sulfuras, sell_in), do: sell_in
+  defp update_sell_in(_, sell_in), do: sell_in - 1
+
+  defp update_quality(:sulfuras, %Item{quality: quality}), do: quality
+
+  defp update_quality(:aged_brie, %Item{quality: quality, sell_in: sell_in}) do
+    inc = if sell_in <= 0, do: 2, else: 1
+    min(quality + inc, 50)
+  end
+
+  defp update_quality(:backstage, %Item{quality: quality, sell_in: sell_in}) do
+    cond do
+      sell_in <= 0 -> 0
+      sell_in <= 5 -> min(quality + 3, 50)
+      sell_in <= 10 -> min(quality + 2, 50)
+      true -> min(quality + 1, 50)
+    end
+  end
+
+  defp update_quality(:conjured, %Item{quality: quality, sell_in: sell_in}) do
+    dec = if sell_in <= 0, do: 4, else: 2
+    max(quality - dec, 0)
+  end
+
+  defp update_quality(:normal, %Item{quality: quality, sell_in: sell_in}) do
+    dec = if sell_in <= 0, do: 2, else: 1
+    max(quality - dec, 0)
   end
 end
